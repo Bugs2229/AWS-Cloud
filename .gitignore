@@ -1,0 +1,39 @@
+  # Terraform Provider Binaries
+**/.terraform/
+**/.terraform.lock.hcl
+
+# Provider plugin cache
+**/.terraform/providers/
+**/.terraform/plugins/
+
+# Terraform provider binaries (all platforms)
+**/terraform-provider-*
+**/*.exe
+
+# Terraform state files (recommended to also ignore)
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Terraform plan output
+*.tfplan
+*.plan
+
+# Terraform variable files with sensitive data
+*.tfvars
+*.tfvars.json
+
+# Terraform crash logs
+crash.log
+crash.*.log
+
+# Terraform override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Terraform CLI config
+.terraformrc
+terraform.rc
+
