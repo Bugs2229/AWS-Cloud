@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Armageddon Lab 1a — Infrastructure Diagram</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;700;800&display=swap');
+
+  :root {
+    --bg: #0a0d14;
+    --surface: #111520;
+    --surface2: #161c2e;
+    --border: #1f2a45;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --accent3: #7cff6b;
+    --accent4: #ffcc44;
+    --text: #c8d6f0;
+    --text-dim: #5a6a8a;
+    --text-bright: #eaf2ff;
+    --iam: #9d7dff;
+    --secrets: #ff7dd8;
+    --internet: #ff6b35;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    padding: 40px 24px;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  header {
+    margin-bottom: 48px;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .header-badge {
+    background: var(--accent);
+    color: #000;
+    font-weight: 700;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 3px;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+    margin-top: 8px;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(22px, 4vw, 36px);
+    font-weight: 800;
+    color: var(--text-bright);
+    line-height: 1.1;
+  }
+
+  h1 span {
+    color: var(--accent);
+  }
+
+  .subtitle {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+  }
+
+  /* ─── SECTION LABELS ─── */
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ─── MAIN DIAGRAM ─── */
+  .diagram {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* Internet zone */
+  .zone-internet {
+    background: linear-gradient(180deg, rgba(255,107,53,0.06) 0%, transparent 100%);
+    border: 1px solid rgba(255,107,53,0.2);
+    border-radius: 12px 12px 0 0;
+    padding: 20px 24px 30px;
+    position: relative;
+  }
+
+  .zone-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .zone-label .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  /* VPC zone */
+  .zone-vpc {
+    background: rgba(0, 212, 255, 0.02);
+    border: 1px solid rgba(0,212,255,0.15);
+    border-top: none;
+    border-radius: 0 0 0 0;
+    padding: 24px;
+    position: relative;
+  }
+
+  .zone-vpc-label {
+    color: var(--accent);
+  }
+  .zone-vpc-label .dot { background: var(--accent); }
+
+  /* AWS Services zone */
+  .zone-aws {
+    background: rgba(157, 125, 255, 0.02);
+    border: 1px solid rgba(157,125,255,0.15);
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    padding: 24px;
+    position: relative;
+  }
+
+  .zone-aws-label {
+    color: var(--iam);
+  }
+  .zone-aws-label .dot { background: var(--iam); }
+
+  /* ─── NODE CARDS ─── */
+  .nodes-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .node {
+    border-radius: 8px;
+    padding: 16px 18px;
+    flex: 1;
+    min-width: 160px;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .node:hover {
+    transform: translateY(-2px);
+  }
+
+  .node-internet {
+    background: rgba(255,107,53,0.08);
+    border: 1px solid rgba(255,107,53,0.3);
+    max-width: 200px;
+  }
+
+  .node-ec2 {
+    background: rgba(0,212,255,0.06);
+    border: 1px solid rgba(0,212,255,0.3);
+    flex: 2;
+    box-shadow: 0 0 30px rgba(0,212,255,0.05);
+  }
+
+  .node-sg {
+    background: rgba(124,255,107,0.06);
+    border: 1px dashed rgba(124,255,107,0.3);
+    flex: 1;
+    font-size: 11px;
+  }
+
+  .node-rds {
+    background: rgba(255,204,68,0.06);
+    border: 1px solid rgba(255,204,68,0.3);
+    flex: 2;
+    box-shadow: 0 0 30px rgba(255,204,68,0.05);
+  }
+
+  .node-secrets {
+    background: rgba(255,125,216,0.06);
+    border: 1px solid rgba(255,125,216,0.3);
+    flex: 1.5;
+  }
+
+  .node-iam {
+    background: rgba(157,125,255,0.06);
+    border: 1px solid rgba(157,125,255,0.3);
+    flex: 1.5;
+  }
+
+  .node-s3 {
+    background: rgba(255,107,53,0.06);
+    border: 1px solid rgba(255,107,53,0.2);
+    flex: 1;
+    font-size: 11px;
+  }
+
+  .node-icon {
+    font-size: 22px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .node-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text-bright);
+    margin-bottom: 4px;
+  }
+
+  .node-sub {
+    font-size: 10px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .node-tag {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 3px;
+    margin-top: 8px;
+    letter-spacing: 0.08em;
+  }
+
+  .tag-orange { background: rgba(255,107,53,0.2); color: var(--accent2); }
+  .tag-cyan { background: rgba(0,212,255,0.15); color: var(--accent); }
+  .tag-green { background: rgba(124,255,107,0.15); color: var(--accent3); }
+  .tag-yellow { background: rgba(255,204,68,0.15); color: var(--accent4); }
+  .tag-purple { background: rgba(157,125,255,0.15); color: var(--iam); }
+  .tag-pink { background: rgba(255,125,216,0.15); color: var(--secrets); }
+  .tag-red { background: rgba(255,60,60,0.15); color: #ff6060; }
+
+  /* ─── SUBNET BLOCKS ─── */
+  .subnet-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .subnet {
+    flex: 1;
+    border-radius: 8px;
+    padding: 14px 16px;
+    min-width: 200px;
+  }
+
+  .subnet-public {
+    background: rgba(0,212,255,0.03);
+    border: 1px dashed rgba(0,212,255,0.25);
+  }
+
+  .subnet-private {
+    background: rgba(255,204,68,0.03);
+    border: 1px dashed rgba(255,204,68,0.25);
+    flex: 2;
+  }
+
+  .subnet-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .subnet-cidr {
+    font-size: 9px;
+    color: var(--text-dim);
+    margin-left: auto;
+  }
+
+  /* ─── CONNECTORS ─── */
+  .flow-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 0;
+    font-size: 10px;
+    color: var(--text-dim);
+    position: relative;
+  }
+
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .arrow-line {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .connector {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    padding: 8px 0;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .conn-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: var(--text-dim);
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .conn-line {
+    width: 2px;
+    height: 36px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+  }
+
+  .conn-line::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+  }
+
+  .conn-line::after {
+    content: '▼';
+    position: absolute;
+    bottom: -2px;
+    font-size: 10px;
+  }
+
+  .conn-cyan::before { background: linear-gradient(180deg, rgba(0,212,255,0.5), rgba(0,212,255,0.1)); }
+  .conn-cyan::after { color: rgba(0,212,255,0.6); }
+  .conn-yellow::before { background: linear-gradient(180deg, rgba(255,204,68,0.5), rgba(255,204,68,0.1)); }
+  .conn-yellow::after { color: rgba(255,204,68,0.6); }
+  .conn-pink::before { background: linear-gradient(180deg, rgba(255,125,216,0.5), rgba(255,125,216,0.1)); }
+  .conn-pink::after { color: rgba(255,125,216,0.6); }
+  .conn-purple::before { background: linear-gradient(180deg, rgba(157,125,255,0.5), rgba(157,125,255,0.1)); }
+  .conn-purple::after { color: rgba(157,125,255,0.6); }
+  .conn-orange::before { background: linear-gradient(180deg, rgba(255,107,53,0.5), rgba(255,107,53,0.1)); }
+  .conn-orange::after { color: rgba(255,107,53,0.6); }
+  .conn-green::before { background: linear-gradient(180deg, rgba(124,255,107,0.5), rgba(124,255,107,0.1)); }
+  .conn-green::after { color: rgba(124,255,107,0.6); }
+
+  .conn-label {
+    font-size: 9px;
+    color: var(--text-dim);
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+
+  /* ─── FILE MAP TABLE ─── */
+  .file-map {
+    margin-top: 48px;
+  }
+
+  .file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 12px;
+  }
+
+  .file-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    transition: border-color 0.2s;
+  }
+
+  .file-card:hover {
+    border-color: rgba(0,212,255,0.3);
+  }
+
+  .file-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .file-name .file-icon {
+    font-size: 14px;
+  }
+
+  .file-desc {
+    font-size: 10px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .file-resources {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .resource-chip {
+    font-size: 8px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    letter-spacing: 0.03em;
+  }
+
+  /* ─── FLOW LEGEND ─── */
+  .legend {
+    margin-top: 40px;
+    padding: 20px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .legend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .legend-line {
+    width: 32px;
+    height: 2px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* ─── SECURITY CALLOUT ─── */
+  .security-callout {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: rgba(124,255,107,0.04);
+    border: 1px solid rgba(124,255,107,0.15);
+    border-radius: 6px;
+    font-size: 10px;
+    color: var(--accent3);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .risk-callout {
+    background: rgba(255,60,60,0.04);
+    border-color: rgba(255,60,60,0.2);
+    color: #ff8080;
+  }
+
+  /* ─── DEPENDENCY CHAIN ─── */
+  .dep-chain {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 40px;
+    font-size: 10px;
+  }
+
+  .dep-node {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 10px;
+  }
+
+  .dep-arrow {
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .zone-internet { animation: fadeUp 0.4s ease both; }
+  .zone-vpc { animation: fadeUp 0.5s ease 0.1s both; }
+  .zone-aws { animation: fadeUp 0.6s ease 0.2s both; }
+  .file-card { animation: fadeUp 0.5s ease 0.3s both; }
+  .legend { animation: fadeUp 0.5s ease 0.35s both; }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- Header -->
+  <header>
+    <div>
+      <div class="header-badge">ARMAGEDDON LAB 1A</div>
+    </div>
+    <div>
+      <h1>EC2 → RDS <span>Infrastructure Diagram</span></h1>
+      <div class="subtitle">Terraform · AWS · us-east-1 · 10 files · Flask on Amazon Linux 2023</div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- MAIN ARCHITECTURE DIAGRAM                               -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div class="section-label">Architecture Overview</div>
+
+  <div class="diagram">
+
+    <!-- INTERNET ZONE -->
+    <div class="zone-internet">
+      <div class="zone-label" style="color: var(--accent2);">
+        <div class="dot" style="background: var(--accent2);"></div>
+        Internet / Public Access
+      </div>
+      <div class="nodes-row">
+        <div class="node node-internet">
+          <span class="node-icon">🌐</span>
+          <div class="node-title">User / Client</div>
+          <div class="node-sub">HTTP :80<br>SSH :22</div>
+          <span class="node-tag tag-orange">0.0.0.0/0</span>
+        </div>
+        <div class="node node-s3">
+          <span class="node-icon">🪣</span>
+          <div class="node-title">S3 Bucket</div>
+          <div class="node-sub" style="font-size:10px;">rds-secret-am1-config<br><br>Terraform remote state<br>backend storage<br><br>key: states/01182026/<br>terraform.tfstate</div>
+          <span class="node-tag tag-orange">00-auth.tf</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLOW: Internet → EC2 -->
+    <div class="connector" style="padding: 4px 24px; background: linear-gradient(180deg, rgba(255,107,53,0.03), rgba(0,212,255,0.03));">
+      <div class="conn-item">
+        <div class="conn-line conn-cyan"></div>
+        <div class="conn-label">HTTP :80 → ec2-sg ingress<br>allowed_http_cidrs</div>
+      </div>
+      <div class="conn-item">
+        <div class="conn-line conn-orange" style="opacity:0.5;"></div>
+        <div class="conn-label">SSH :22 → ec2-sg ingress<br>(0.0.0.0/0 — lab only!)</div>
+      </div>
+    </div>
+
+    <!-- VPC ZONE -->
+    <div class="zone-vpc">
+      <div class="zone-label zone-vpc-label">
+        <div class="dot"></div>
+        VPC: ultram_vpc_01 — 10.10.0.0/16
+        <span style="margin-left:auto; font-size:9px; color: var(--text-dim);">IGW attached · DNS hostnames enabled</span>
+      </div>
+
+      <!-- PUBLIC SUBNET -->
+      <div class="subnet-row" style="margin-bottom: 16px;">
+        <div class="subnet subnet-public" style="flex: 1; min-width: 240px;">
+          <div class="subnet-label" style="color: var(--accent);">
+            🟦 Public Subnet
+            <span class="subnet-cidr">10.10.30.0/24 · us-east-1a</span>
+          </div>
+          <div class="nodes-row">
+            <div class="node node-ec2">
+              <span class="node-icon">🖥️</span>
+              <div class="node-title">EC2 — web</div>
+              <div class="node-sub">
+                AMI: ami-02dc6e3e481e2bbc5<br>
+                Instance: t3.micro<br>
+                OS: Amazon Linux 2023<br>
+                Volume: 8GB gp3, encrypted<br>
+                IMDSv2 enforced<br>
+                App: Flask :80 (systemd)
+              </div>
+              <div style="margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;">
+                <span class="node-tag tag-cyan">05-EC2.tf</span>
+                <span class="node-tag tag-cyan">ec2-sg</span>
+                <span class="node-tag tag-purple">ec2-role-profile</span>
+              </div>
+            </div>
+            <div class="node node-sg" style="min-width: 150px;">
+              <span class="node-icon">🛡️</span>
+              <div class="node-title" style="font-size: 12px;">ec2-sg</div>
+              <div class="node-sub">
+                <strong style="color: var(--accent3);">INBOUND</strong><br>
+                TCP 80 ← 0.0.0.0/0<br>
+                TCP 22 ← 0.0.0.0/0<br>
+                <br>
+                <strong style="color: var(--accent2);">OUTBOUND</strong><br>
+                ALL → 0.0.0.0/0
+              </div>
+              <span class="node-tag tag-green">04-sg.tf</span>
+            </div>
+          </div>
+
+          <!-- Route Table note -->
+          <div style="margin-top: 10px; padding: 8px 12px; background: rgba(0,212,255,0.04); border: 1px solid rgba(0,212,255,0.1); border-radius: 5px; font-size: 10px; color: var(--text-dim);">
+            📋 <strong style="color: var(--accent);">public-rt</strong> — Route: 0.0.0.0/0 → Internet Gateway (igw)
+          </div>
+        </div>
+      </div>
+
+      <!-- FLOWS EC2 → RDS and EC2 → AWS Services -->
+      <div class="connector" style="padding: 0 8px 4px;">
+        <div class="conn-item">
+          <div class="conn-line conn-yellow"></div>
+          <div class="conn-label">MySQL TCP:3306<br>SG-to-SG ref only</div>
+        </div>
+        <div class="conn-item">
+          <div class="conn-line conn-pink"></div>
+          <div class="conn-label">HTTPS → Secrets Mgr<br>(IAM role, no creds in code)</div>
+        </div>
+        <div class="conn-item">
+          <div class="conn-line conn-purple"></div>
+          <div class="conn-label">sts:AssumeRole<br>ec2.amazonaws.com</div>
+        </div>
+      </div>
+
+      <!-- PRIVATE SUBNETS -->
+      <div class="subnet-row">
+        <div class="subnet subnet-private">
+          <div class="subnet-label" style="color: var(--accent4);">
+            🟨 Private Subnets (RDS)
+            <span class="subnet-cidr">10.10.20.0/24 (us-east-1a) · 10.10.10.0/24 (us-east-1b)</span>
+          </div>
+
+          <div style="padding: 6px 8px; margin-bottom: 10px; background: rgba(255,204,68,0.04); border: 1px solid rgba(255,204,68,0.1); border-radius: 5px; font-size: 10px; color: var(--text-dim);">
+            📋 <strong style="color: var(--accent4);">private-rt</strong> — No internet route (isolated) · DB Subnet Group: <em>db-subnet-group</em>
+          </div>
+
+          <div class="nodes-row">
+            <div class="node node-rds">
+              <span class="node-icon">🗄️</span>
+              <div class="node-title">RDS MySQL — lab-mysql</div>
+              <div class="node-sub">
+                Engine: MySQL 8.4.7<br>
+                Class: db.t3.micro<br>
+                Storage: 20GB gp2, encrypted<br>
+                DB Name: labmysql<br>
+                Port: 3306<br>
+                <strong style="color: #ff6060;">publicly_accessible = false</strong><br>
+                Multi-AZ: disabled (lab)<br>
+                Backup retention: 0 (lab)
+              </div>
+              <div style="margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;">
+                <span class="node-tag tag-yellow">06-RDS.tf</span>
+                <span class="node-tag tag-yellow">rds-sg</span>
+              </div>
+            </div>
+            <div class="node node-sg" style="min-width: 160px; border-color: rgba(255,204,68,0.3);">
+              <span class="node-icon">🛡️</span>
+              <div class="node-title" style="font-size: 12px;">rds-sg</div>
+              <div class="node-sub">
+                <strong style="color: var(--accent3);">INBOUND</strong><br>
+                TCP 3306 ←<br>
+                <em style="color: var(--accent4);">source: ec2-sg ID</em><br>
+                (SG-to-SG reference)<br>
+                <br>
+                <strong style="color: var(--text-dim);">OUTBOUND</strong><br>
+                <em>none defined</em>
+              </div>
+              <span class="node-tag tag-green">04-sg.tf</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /zone-vpc -->
+
+    <!-- FLOWS VPC → AWS Managed Services -->
+    <div class="connector" style="padding: 4px 24px; background: linear-gradient(180deg, rgba(0,212,255,0.02), rgba(157,125,255,0.03));">
+      <div class="conn-item">
+        <div class="conn-line conn-pink"></div>
+        <div class="conn-label">GetSecretValue API<br>HTTPS via VPC egress</div>
+      </div>
+      <div class="conn-item">
+        <div class="conn-line conn-purple"></div>
+        <div class="conn-label">Policy attachment<br>role → policy</div>
+      </div>
+    </div>
+
+    <!-- AWS MANAGED SERVICES ZONE -->
+    <div class="zone-aws">
+      <div class="zone-label zone-aws-label">
+        <div class="dot"></div>
+        AWS Managed Services (Regional — us-east-1)
+      </div>
+
+      <div class="nodes-row">
+
+        <div class="node node-secrets">
+          <span class="node-icon">🔑</span>
+          <div class="node-title">Secrets Manager</div>
+          <div class="node-sub">
+            Secret: lab/rds/mysql<br>
+            Stores: username, password,<br>
+            host, port, dbname<br>
+            <br>
+            Password: 26-char random<br>
+            recovery_window = 0 (lab)
+          </div>
+          <div style="margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;">
+            <span class="node-tag tag-pink">02-secrets.tf</span>
+            <span class="node-tag tag-pink">random_password</span>
+          </div>
+        </div>
+
+        <div class="node node-iam">
+          <span class="node-icon">🪪</span>
+          <div class="node-title">IAM Stack</div>
+          <div class="node-sub">
+            <strong style="color: var(--iam);">ec2-role</strong> — Trust: ec2.amazonaws.com<br>
+            <strong style="color: var(--iam);">secrets-access</strong> — Policy<br>
+            &nbsp;&nbsp;↳ secretsmanager:GetSecretValue<br>
+            &nbsp;&nbsp;↳ resource: arn:…:secret:lab/rds/mysql*<br>
+            <strong style="color: var(--iam);">ec2-role-profile</strong> — Instance profile<br>
+            &nbsp;&nbsp;↳ wraps role → attached to EC2
+          </div>
+          <div style="margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;">
+            <span class="node-tag tag-purple">01-IAM.tf</span>
+            <span class="node-tag tag-purple">least privilege</span>
+          </div>
+        </div>
+
+        <div class="node" style="background: rgba(255,107,53,0.06); border: 1px solid rgba(255,107,53,0.2); flex: 1; min-width: 140px;">
+          <span class="node-icon">🔐</span>
+          <div class="node-title">TLS Key Pair</div>
+          <div class="node-sub">
+            RSA 4096-bit<br>
+            Auto-generated by Terraform<br>
+            Stored in state (S3)<br>
+            Attached to EC2 as<br>
+            ec2-key
+          </div>
+          <span class="node-tag tag-orange">05-EC2.tf</span>
+        </div>
+
+      </div>
+    </div><!-- /zone-aws -->
+
+  </div><!-- /diagram -->
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- SECURITY CALLOUTS                                       -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 24px;">
+    <div class="security-callout">
+      <span>✅</span>
+      <div>
+        <strong>Security strengths:</strong> RDS is not publicly accessible · EC2 uses IAM role (no static credentials) · RDS SG uses SG-to-SG reference (not open CIDR) · IMDSv2 enforced on EC2 · Storage encrypted at rest (both EC2 volume and RDS) · Secrets stored in Secrets Manager, not in code or AMI
+      </div>
+    </div>
+    <div class="security-callout risk-callout">
+      <span>⚠️</span>
+      <div>
+        <strong>Lab-only risks (not for production):</strong> SSH open to 0.0.0.0/0 (port 22) · HTTP only (no HTTPS/TLS) · backup_retention_period = 0 · deletion_protection = false · multi_az = false · TLS private key stored in Terraform state
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- DEPENDENCY CHAIN                                        -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div class="dep-chain">
+    <span style="color: var(--text-dim); font-size: 10px; font-weight: 700; letter-spacing: 0.1em; margin-right: 8px;">DEPLOY ORDER</span>
+    <div class="dep-node" style="background: rgba(157,125,255,0.15); color: var(--iam);">IAM Role</div>
+    <span class="dep-arrow">→</span>
+    <div class="dep-node" style="background: rgba(0,212,255,0.1); color: var(--accent);">VPC + Subnets</div>
+    <span class="dep-arrow">→</span>
+    <div class="dep-node" style="background: rgba(124,255,107,0.1); color: var(--accent3);">Security Groups</div>
+    <span class="dep-arrow">→</span>
+    <div class="dep-node" style="background: rgba(255,204,68,0.1); color: var(--accent4);">RDS Instance</div>
+    <span class="dep-arrow">→</span>
+    <div class="dep-node" style="background: rgba(255,125,216,0.1); color: var(--secrets);">Secrets Manager</div>
+    <span class="dep-arrow">→</span>
+    <div class="dep-node" style="background: rgba(0,212,255,0.1); color: var(--accent);">EC2 Instance</div>
+    <span style="color: var(--text-dim); font-size: 9px; margin-left: 8px;">(depends_on: RDS + Secret)</span>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- APP DATA FLOW                                           -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div style="margin-top: 40px;">
+    <div class="section-label">Application Data Flow (user_data.sh → app.py)</div>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding: 16px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; font-size: 10px;">
+      <div style="padding: 6px 12px; background: rgba(255,107,53,0.1); border-radius: 5px; color: var(--accent2);">GET /init</div>
+      <span style="color: var(--text-dim);">→</span>
+      <div style="padding: 6px 12px; background: rgba(255,125,216,0.1); border-radius: 5px; color: var(--secrets);">Fetch secret<br>from Secrets Mgr</div>
+      <span style="color: var(--text-dim);">→</span>
+      <div style="padding: 6px 12px; background: rgba(255,204,68,0.1); border-radius: 5px; color: var(--accent4);">CREATE DATABASE labdb<br>CREATE TABLE notes</div>
+      <div style="width: 100%; height: 1px; background: var(--border); margin: 4px 0;"></div>
+      <div style="padding: 6px 12px; background: rgba(255,107,53,0.1); border-radius: 5px; color: var(--accent2);">GET /add?note=…</div>
+      <span style="color: var(--text-dim);">→</span>
+      <div style="padding: 6px 12px; background: rgba(255,125,216,0.1); border-radius: 5px; color: var(--secrets);">Fetch secret</div>
+      <span style="color: var(--text-dim);">→</span>
+      <div style="padding: 6px 12px; background: rgba(255,204,68,0.1); border-radius: 5px; color: var(--accent4);">INSERT INTO notes</div>
+      <div style="width: 100%; height: 1px; background: var(--border); margin: 4px 0;"></div>
+      <div style="padding: 6px 12px; background: rgba(255,107,53,0.1); border-radius: 5px; color: var(--accent2);">GET /list</div>
+      <span style="color: var(--text-dim);">→</span>
+      <div style="padding: 6px 12px; background: rgba(255,125,216,0.1); border-radius: 5px; color: var(--secrets);">Fetch secret</div>
+      <span style="color: var(--text-dim);">→</span>
+      <div style="padding: 6px 12px; background: rgba(255,204,68,0.1); border-radius: 5px; color: var(--accent4);">SELECT FROM notes</div>
+      <span style="color: var(--text-dim);">→</span>
+      <div style="padding: 6px 12px; background: rgba(0,212,255,0.1); border-radius: 5px; color: var(--accent);">HTML response<br>to browser</div>
+    </div>
+    <div style="margin-top: 8px; font-size: 10px; color: var(--text-dim); padding: 0 4px;">
+      Note: credentials fetched fresh on <em>every</em> request — no caching. Installed via user_data.sh on boot as a systemd service (rdsapp.service, port 80).
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- FILE MAP                                                -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div class="file-map">
+    <div class="section-label">Terraform File Map</div>
+    <div class="file-grid">
+
+      <div class="file-card">
+        <div class="file-name"><span class="file-icon">⚙️</span> 00-auth.tf</div>
+        <div class="file-desc">Provider config. Sets AWS region, default ManagedBy tag. Configures S3 remote backend for state storage.</div>
+        <div class="file-resources">
+          <span class="resource-chip">terraform block</span>
+          <span class="resource-chip">provider "aws"</span>
+          <span class="resource-chip">backend "s3"</span>
+        </div>
+      </div>
+
+      <div class="file-card">
+        <div class="file-name"><span class="file-icon">🪪</span> 01-IAM.tf</div>
+        <div class="file-desc">IAM trust policy for EC2 to assume a role. Least-privilege policy granting only GetSecretValue on the specific secret ARN. Attaches policy to role; creates instance profile.</div>
+        <div class="file-resources">
+          <span class="resource-chip">aws_iam_role</span>
+          <span class="resource-chip">aws_iam_policy</span>
+          <span class="resource-chip">aws_iam_role_policy_attachment</span>
+          <span class="resource-chip">aws_iam_instance_profile</span>
+        </div>
+      </div>
+
+      <div class="file-card">
+        <div class="file-name"><span class="file-icon">🔑</span> 02-secrets.tf</div>
+        <div class="file-desc">Generates random 26-char password. Creates Secrets Manager secret container (lab/rds/mysql) and populates it with username, password, host, port, dbname as JSON.</div>
+        <div class="file-resources">
+          <span class="resource-chip">random_password</span>
+          <span class="resource-chip">aws_secretsmanager_secret</span>
+          <span class="resource-chip">aws_secretsmanager_secret_version</span>
+        </div>
+      </div>
+
+      <div class="file-card">
+        <div class="file-name"><span class="file-icon">🌐</span> 03-network.tf</div>
+        <div class="file-desc">VPC (10.10.0.0/16) with DNS. Internet Gateway. 1 public subnet (us-east-1a), 2 private subnets (us-east-1a/b). Route tables: public routes to IGW, private is isolated. DB subnet group for RDS spanning private subnets.</div>
+        <div class="file-resources">
+          <span class="resource-chip">aws_vpc</span>
+          <span class="resource-chip">aws_internet_gateway</span>
+          <span class="resource-chip">aws_subnet (×3)</span>
+          <span class="resource-chip">aws_route_table (×2)</span>
+          <span class="resource-chip">aws_db_subnet_group</span>
+        </div>
+      </div>
+
+      <div class="file-card">
+        <div class="file-name"><span class="file-icon">🛡️</span> 04-sg.tf</div>
+        <div class="file-desc">Two security groups. ec2-sg: allows HTTP/SSH in, all traffic out. rds-sg: allows MySQL (3306) only from ec2-sg ID (SG-to-SG reference — not a CIDR). This is the key security boundary.</div>
+        <div class="file-resources">
+          <span class="resource-chip">aws_security_group (×2)</span>
+          <span class="resource-chip">aws_vpc_security_group_ingress_rule (×3)</span>
+          <span class="resource-chip">aws_vpc_security_group_egress_rule</span>
+        </div>
+      </div>
+
+      <div class="file-card">
+        <div class="file-name"><span class="file-icon">🖥️</span> 05-EC2.tf</div>
+        <div class="file-desc">Generates RSA-4096 SSH key pair. Finds latest Amazon Linux 2023 AMI (overridden with fixed AMI). Launches t3.micro EC2 in public subnet with IAM profile, user_data.sh bootstrap script, encrypted gp3 volume, IMDSv2. Depends on RDS and secret being ready.</div>
+        <div class="file-resources">
+          <span class="resource-chip">tls_private_key</span>
+          <span class="resource-chip">aws_key_pair</span>
+          <span class="resource-chip">data.aws_ami</span>
+          <span class="resource-chip">aws_instance</span>
+        </div>
+      </div>
+
+      <div class="file-card">
+        <div class="file-name"><span class="file-icon">🗄️</span> 06-RDS.tf</div>
+        <div class="file-desc">MySQL 8.4.7 on db.t3.micro. 20GB gp2 encrypted. Not publicly accessible. Placed in private DB subnet group. Single-AZ. No backups, no final snapshot (lab teardown). Uses random password from secrets.tf.</div>
+        <div class="file-resources">
+          <span class="resource-chip">aws_db_instance</span>
+        </div>
+      </div>
+
+      <div class="file-card">
+        <div class="file-name"><span class="file-icon">📋</span> 99-variables.tf</div>
+        <div class="file-desc">All configurable values: region (us-east-1), VPC CIDR, subnet CIDRs, AZs, DB name/user/port/engine/class/storage, instance type, secret name, allowed HTTP CIDRs.</div>
+        <div class="file-resources">
+          <span class="resource-chip">region</span>
+          <span class="resource-chip">cidr</span>
+          <span class="resource-chip">db_*</span>
+          <span class="resource-chip">instance_type</span>
+          <span class="resource-chip">allowed_http_cidrs</span>
+        </div>
+      </div>
+
+      <div class="file-card">
+        <div class="file-name"><span class="file-icon">📜</span> user_data.sh</div>
+        <div class="file-desc">Boot script: installs Python3, Flask, pymysql, boto3. Writes Flask app (app.py) with /init, /add, /list routes. Registers as systemd service (rdsapp.service). Fetches DB credentials from Secrets Manager at runtime on every request.</div>
+        <div class="file-resources">
+          <span class="resource-chip">Flask :80</span>
+          <span class="resource-chip">boto3 → Secrets Mgr</span>
+          <span class="resource-chip">pymysql → RDS</span>
+          <span class="resource-chip">systemd service</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- LEGEND                                                  -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div class="legend">
+    <div class="section-label" style="margin-bottom: 0;">Legend</div>
+    <div class="legend-grid">
+      <div class="legend-item"><div class="legend-line" style="background: var(--accent);"></div> EC2 / VPC resources</div>
+      <div class="legend-item"><div class="legend-line" style="background: var(--accent4);"></div> RDS / Database resources</div>
+      <div class="legend-item"><div class="legend-line" style="background: var(--secrets);"></div> Secrets Manager API call</div>
+      <div class="legend-item"><div class="legend-line" style="background: var(--iam);"></div> IAM role / policy</div>
+      <div class="legend-item"><div class="legend-line" style="background: var(--accent2);"></div> Internet / S3 / public traffic</div>
+      <div class="legend-item"><div class="legend-line" style="background: var(--accent3); border-top: 2px dashed var(--accent3); height: 0;"></div> Security group / subnet boundary</div>
+      <div class="legend-item"><div class="legend-line" style="background: #ff6060;"></div> Security risk (lab-only setting)</div>
+    </div>
+  </div>
+
+  <div style="margin-top: 32px; text-align: center; font-size: 10px; color: var(--text-dim); letter-spacing: 0.08em;">
+    ARMAGEDDON LAB 1A · EC2→RDS INTEGRATION · TERRAFORM · AWS us-east-1
+  </div>
+
+</div>
+</body>
+</html>
