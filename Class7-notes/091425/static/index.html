@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EC2 Instance Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 My Thai EC2 Instance Dashboard</h1>
+            <p class="subtitle">Live server information and daydreaming</p>
+        </header>
+
+        <main>
+
+            <!-- Instance Information -->
+            <section class="info-section">
+                <h2>Instance Details</h2>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <div class="info-content">
+                            <h3>Hostname</h3>
+                            <p>{{HOSTNAME}}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-card">
+                        <div class="info-content">
+                            <h3>Private IP Address</h3>
+                            <p>{{LOCAL_IP}}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-card">
+                        <div class="info-content">
+                            <h3>Availability Zone</h3>
+                            <p>{{AZ}}</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Image Gallery Section -->
+            <section class="gallery-section">
+                <h2>Gallery</h2>
+                <div class="image-gallery">
+                    <div class="gallery-item">
+                        <img src="{{IMAGE_1}}" alt="Thai Girl 1" class="gallery-img">
+                        <div class="gallery-img-overlay">
+                            <img src="{{IMAGE_1}}" alt="Thai Girl 1" class="gallery-img-large">
+                        </div>
+                        <p>Beautiful Thai Girl 1</p>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="{{IMAGE_2}}" alt="Thai Girl 2" class="gallery-img">
+                        <div class="gallery-img-overlay">
+                            <img src="{{IMAGE_2}}" alt="Thai Girl 2" class="gallery-img-large">
+                        </div>
+                        <p>Beautiful Thai Girl 2</p>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="{{IMAGE_3}}" alt="Thai Girl 3" class="gallery-img">
+                        <div class="gallery-img-overlay">
+                            <img src="{{IMAGE_3}}" alt="Thai Girl 3" class="gallery-img-large">
+                        </div>
+                        <p>Beautiful Thai Girl 3</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Status Section -->
+            <section class="status-section">
+                <h2>Server Status</h2>
+                <div class="status-indicator">
+                    <div class="status-light"></div>
+                    <span>Server is running successfully!</span>
+                </div>
+                <p class="status-time">Last updated: <span id="timestamp"></span></p>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 EC2 Instance Dashboard | Powered by AWS</p>
+        </footer>
+    </div>
+
+    <script>
+        // Update timestamp
+        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+        
+        // Add some interactivity to gallery images
+        document.querySelectorAll('.gallery-img').forEach(img => {
+            img.addEventListener('click', function() {
+                this.style.transform = this.style.transform === 'scale(1.1)' ? 'scale(1)' : 'scale(1.1)';
+            });
+        });
+    </script>
+</body>
+</html>
